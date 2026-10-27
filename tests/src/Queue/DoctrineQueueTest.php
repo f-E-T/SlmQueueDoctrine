@@ -5,6 +5,7 @@ namespace SlmQueueDoctrineTest\Queue;
 use DateInterval;
 use DateTime;
 use DateTimeZone;
+use PHPUnit\Framework\Attributes\DataProvider;
 use SlmQueue\Job\JobPluginManager;
 use SlmQueueDoctrine\Exception\JobNotFoundException;
 use SlmQueueDoctrine\Exception\LogicException;
@@ -31,7 +32,7 @@ class DoctrineQueueTest extends TestCase
 
         $container = ServiceManagerFactory::getServiceManager();
         $this->queue = new DoctrineQueue(
-            $this->getEntityManager()->getConnection(),
+            $this->getConnection(),
             $options,
             'some-queue-name',
             $container->get(JobPluginManager::class)
@@ -67,8 +68,7 @@ class DoctrineQueueTest extends TestCase
 
         $this->queue->push($job);
 
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT count(*) as count FROM queue_default')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT count(*) as count FROM queue_default');
 
         static::assertEquals(1, $result['count']);
     }
@@ -112,8 +112,7 @@ class DoctrineQueueTest extends TestCase
         $this->queue->push($job);
         $this->queue->push($job);
 
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT count(*) as count FROM queue_default')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT count(*) as count FROM queue_default');
 
         static::assertEquals(2, $result['count']);
     }
@@ -127,8 +126,7 @@ class DoctrineQueueTest extends TestCase
         static::assertTrue(is_numeric($job->getId()), "After a job has been pushed its id should should be an id");
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         static::assertEquals('some-queue-name', $result['queue'], "The queue-name is expected to be stored.");
         static::assertEquals(
@@ -144,7 +142,7 @@ class DoctrineQueueTest extends TestCase
         );
     }
 
-    public function dataProviderPushScheduledOptions(): array
+    public static function dataProviderPushScheduledOptions(): array
     {
         $now = new DateTime('1970-01-01 00:01:40');
 
@@ -158,16 +156,13 @@ class DoctrineQueueTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider dataProviderPushScheduledOptions
-     */
+    #[DataProvider('dataProviderPushScheduledOptions')]
     public function testPushOptionsScheduled($testOptions, $expectedResult): void
     {
         $this->queue->push(new SimpleJob(), $testOptions);
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         static::assertEquals(
             $expectedResult,
@@ -176,7 +171,7 @@ class DoctrineQueueTest extends TestCase
         );
     }
 
-    public function dataProviderPushDelayOptions(): array
+    public static function dataProviderPushDelayOptions(): array
     {
         return [
             [['delay' => 100], 100],
@@ -188,16 +183,13 @@ class DoctrineQueueTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider dataProviderPushDelayOptions
-     */
+    #[DataProvider('dataProviderPushDelayOptions')]
     public function testPushOptionsDelay($testOptions, $expectedResult): void
     {
         $this->queue->push(new SimpleJob(), $testOptions);
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         $created = new DateTime($result['created']);
         $scheduled = new DateTime($result['scheduled']);
@@ -221,8 +213,7 @@ class DoctrineQueueTest extends TestCase
         static::assertNotNull($returnedJob, "A job should have been returned.");
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         static::assertEquals(
             DoctrineQueue::STATUS_RUNNING,
@@ -240,7 +231,7 @@ class DoctrineQueueTest extends TestCase
         $job = new SimpleJob();
         $returnedCount = 0;
 
-        $now = new DateTime(null, new DateTimeZone(date_default_timezone_get()));
+        $now = new DateTime('now', new DateTimeZone(date_default_timezone_get()));
         $this->queue->push($job, ['scheduled' => time() + $now->getOffset() + 10]);
         static::assertNull($this->queue->pop(), "Job is not due yet.");
 
@@ -281,8 +272,7 @@ class DoctrineQueueTest extends TestCase
 
         $this->queue->delete($job);
 
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT count(*) as count FROM queue_default')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT count(*) as count FROM queue_default');
 
         static::assertEquals(0, $result['count']);
     }
@@ -299,14 +289,12 @@ class DoctrineQueueTest extends TestCase
         $this->queue->delete($job);
 
         // count
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT count(*) as count FROM queue_default')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT count(*) as count FROM queue_default');
 
         static::assertEquals(1, $result['count']);
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         static::assertEquals(
             DoctrineQueue::STATUS_DELETED,
@@ -327,14 +315,12 @@ class DoctrineQueueTest extends TestCase
         $this->queue->delete($job);
 
         // count
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT count(*) as count FROM queue_default')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT count(*) as count FROM queue_default');
 
         static::assertEquals(1, $result['count']);
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         static::assertEquals(
             DoctrineQueue::STATUS_DELETED,
@@ -369,8 +355,7 @@ class DoctrineQueueTest extends TestCase
 
         $this->queue->bury($job);
 
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT count(*) as count FROM queue_default')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT count(*) as count FROM queue_default');
 
         static::assertEquals(0, $result['count']);
     }
@@ -386,8 +371,7 @@ class DoctrineQueueTest extends TestCase
         $this->queue->bury($job);
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         static::assertNull($result['message'], "The message of this job should be 'null'.");
         static::assertNull($result['trace'], "The message of this job should be 'null'.");
@@ -397,11 +381,10 @@ class DoctrineQueueTest extends TestCase
         $this->queue->bury($job, ['message' => 'hi', 'trace' => 'because']);
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         static::assertStringContainsString('hi', $result['message']);
-        static::assertNotNull('because', $result['trace']);
+        static::assertSame('because', $result['trace']);
     }
 
     public function testBuryWithLifeTimeShouldMarked(): void
@@ -416,14 +399,12 @@ class DoctrineQueueTest extends TestCase
         $this->queue->bury($job);
 
         // count
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT count(*) as count FROM queue_default')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT count(*) as count FROM queue_default');
 
         static::assertEquals(1, $result['count']);
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         static::assertEquals(
             DoctrineQueue::STATUS_BURIED,
@@ -448,14 +429,12 @@ class DoctrineQueueTest extends TestCase
         $this->queue->bury($job);
 
         // count
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT count(*) as count FROM queue_default')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT count(*) as count FROM queue_default');
 
         static::assertEquals(1, $result['count']);
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         static::assertEquals(
             DoctrineQueue::STATUS_BURIED,
@@ -512,8 +491,7 @@ class DoctrineQueueTest extends TestCase
         $this->queue->release($job);
 
         // fetch last added job
-        $result = $this->getEntityManager()->getConnection()
-            ->query('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1')->fetch();
+        $result = $this->getConnection()->fetchAssociative('SELECT * FROM queue_default ORDER BY id DESC LIMIT 1');
 
         static::assertEquals(
             DoctrineQueue::STATUS_PENDING,

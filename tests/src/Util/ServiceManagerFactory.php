@@ -20,9 +20,10 @@
 
 namespace SlmQueueDoctrineTest\Util;
 
-use Laminas\Mvc\Service\ServiceListenerFactory;
-use Laminas\Mvc\Service\ServiceManagerConfig;
 use Laminas\ServiceManager\ServiceManager;
+use Laminas\Stdlib\ArrayUtils;
+use SlmQueue\ConfigProvider as SlmQueueConfigProvider;
+use SlmQueueDoctrine\ConfigProvider;
 
 /**
  * Utility used to retrieve a freshly bootstrapped application's service manager
@@ -51,27 +52,12 @@ class ServiceManagerFactory
      */
     public static function getServiceManager(): ServiceManager
     {
-        $serviceManagerConfig = new ServiceManagerConfig(
-            isset(static::$config['service_manager']) ? static::$config['service_manager'] : []
-        );
-        /*
-         * get array for new ServiceManager
-         */
-        $config = (method_exists($serviceManagerConfig, 'toArray')
-            && method_exists(ServiceManager::class, 'configure')) ?
-            $serviceManagerConfig->toArray() : $serviceManagerConfig;
+        $config = ArrayUtils::merge((new SlmQueueConfigProvider())(), (new ConfigProvider())());
+        $config = ArrayUtils::merge($config, static::$config);
 
-        $serviceManager = new ServiceManager($config);
-        $serviceManager->setService('ApplicationConfig', static::$config);
-        $serviceManager->setAllowOverride(true);
-        $serviceManager->setFactory('ServiceListener', ServiceListenerFactory::class);
-        $serviceManager->setAllowOverride(false);
+        $serviceManager = new ServiceManager($config['dependencies']);
+        $serviceManager->setService('config', $config);
 
-        /** @var $moduleManager \Laminas\ModuleManager\ModuleManager */
-        $moduleManager = $serviceManager->get('ModuleManager');
-        $moduleManager->loadModules();
-
-        //$serviceManager->setAllowOverride(true);
         return $serviceManager;
     }
 }

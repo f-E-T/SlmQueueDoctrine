@@ -11,7 +11,7 @@ use DateTimeInterface;
 use DateTimeZone;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception as DBALException;
-use Doctrine\DBAL\LockMode;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\DBAL\Types\Types;
 use SlmQueue\Job\JobInterface;
 use SlmQueue\Job\JobPluginManager;
@@ -30,8 +30,6 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
 
     public const LIFETIME_DISABLED  = 0;
     public const LIFETIME_UNLIMITED = -1;
-
-    private const DATABASE_PLATFORM_POSTGRES = 'postgresql';
 
     public const DEFAULT_PRIORITY = 1024;
 
@@ -96,13 +94,7 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
             Types::INTEGER,
         ]);
 
-        if (self::DATABASE_PLATFORM_POSTGRES == $this->connection->getDatabasePlatform()->getName()) {
-            $id = $this->connection->lastInsertId($this->options->getTableName() . '_id_seq');
-        } else {
-            $id = $this->connection->lastInsertId();
-        }
-
-        $job->setId($id);
+        $job->setId($this->connection->lastInsertId());
     }
 
     /**
@@ -124,13 +116,11 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
         );
 
         try {
-            $platform = $conn->getDatabasePlatform();
-
             $queryBuilder = $conn->createQueryBuilder();
 
             $queryBuilder
                 ->select('*')
-                ->from($platform->appendLockHint($this->options->getTableName(), LockMode::PESSIMISTIC_WRITE))
+                ->from($this->options->getTableName())
                 ->where('status = ?')
                 ->andWhere('queue = ?')
                 ->andWhere('scheduled <= ?')
@@ -141,22 +131,19 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
                 ->setParameter(2, $this->now->format('Y-m-d H:i:s.u'))
                 ->setMaxResults(1);
 
-            // Modify the query so it supports row locking (if applicable for database provider)
-            // @see https://github.com/doctrine/doctrine2/blob/5f3afa4c4ffb8cb49870d794cc7daf6a49406966/lib/Doctrine/ORM/Query/SqlWalker.php#L556-L558
-            $sql = $queryBuilder->getSQL() . ' ' . $platform->getWriteLockSQL();
+            // Lock the row so other workers can't pop it. SQLite has no row locks (it locks the whole database
+            // during a write transaction) and DBAL doesn't support FOR UPDATE for it. DBAL 3 names the class
+            // SqlitePlatform, which this check also matches because PHP class names are case-insensitive.
+            if (! $conn->getDatabasePlatform() instanceof SQLitePlatform) {
+                $queryBuilder->forUpdate();
+            }
 
-            $query = $this->connection->executeQuery(
-                $sql,
-                $queryBuilder->getParameters(),
-                $queryBuilder->getParameterTypes()
-            );
-
-            if ($row = $query->fetch()) {
+            if ($row = $queryBuilder->executeQuery()->fetchAssociative()) {
                 $update = 'UPDATE ' . $this->options->getTableName() . ' ' .
                     'SET status = ?, executed = ? ' .
                     'WHERE id = ? AND status = ?';
 
-                $rows = $conn->executeUpdate(
+                $rows = (int) $conn->executeStatement(
                     $update,
                     [
                         static::STATUS_RUNNING,
@@ -174,7 +161,7 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
 
             $conn->commit();
         } catch (DBALException $e) {
-            $conn->rollback();
+            $conn->rollBack();
             $conn->close();
             throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
@@ -208,7 +195,7 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
                 new DateTimeZone(date_default_timezone_get())
             );
 
-            $rows = $this->connection->executeUpdate(
+            $rows = (int) $this->connection->executeStatement(
                 $update,
                 [
                     static::STATUS_DELETED,
@@ -249,7 +236,7 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
                 new DateTimeZone(date_default_timezone_get())
             );
 
-            $rows = $this->connection->executeUpdate(
+            $rows = (int) $this->connection->executeStatement(
                 $update,
                 [
                     static::STATUS_BURIED,
@@ -279,7 +266,7 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
             'SET status = ? ' .
             'WHERE executed < ? AND status = ? AND queue = ? AND finished IS NULL';
 
-        return $this->connection->executeUpdate(
+        return (int) $this->connection->executeStatement(
             $update,
             [
                 static::STATUS_PENDING,
@@ -323,7 +310,7 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
         $time      = microtime(true);
         $micro     = sprintf("%06d", ($time - floor($time)) * 1000000);
 
-        $rows = $this->connection->executeUpdate(
+        $rows = (int) $this->connection->executeStatement(
             $update,
             [
                 static::STATUS_PENDING,
@@ -428,7 +415,7 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
             $delete = 'DELETE FROM ' . $this->options->getTableName() . ' ' .
                 'WHERE finished < ? AND status = ? AND queue = ? AND finished IS NOT NULL';
 
-            $this->connection->executeUpdate(
+            $this->connection->executeStatement(
                 $delete,
                 [$buriedLifetime->format('Y-m-d H:i:s.u'), static::STATUS_BURIED, $this->getName()],
                 [Types::STRING, Types::INTEGER, Types::STRING]
@@ -442,7 +429,7 @@ class DoctrineQueue extends AbstractQueue implements DoctrineQueueInterface
             $delete = 'DELETE FROM ' . $this->options->getTableName() . ' ' .
                 'WHERE finished < ? AND status = ? AND queue = ? AND finished IS NOT NULL';
 
-            $this->connection->executeUpdate(
+            $this->connection->executeStatement(
                 $delete,
                 [$deletedLifetime->format('Y-m-d H:i:s.u'), static::STATUS_DELETED, $this->getName()],
                 [Types::STRING, Types::INTEGER, Types::STRING]

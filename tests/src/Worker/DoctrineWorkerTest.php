@@ -3,8 +3,8 @@
 namespace SlmQueueDoctrineTest\Worker;
 
 use Laminas\EventManager\EventManager;
-use Laminas\ServiceManager\ServiceManager;
-use PHPUnit\Framework\TestCase as TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use SlmQueue\Strategy\MaxRunsStrategy;
 use SlmQueueDoctrine\Queue\DoctrineQueueInterface;
 use SlmQueueDoctrine\Worker\DoctrineWorker;
@@ -13,12 +13,7 @@ use SlmQueueDoctrineTest\Asset;
 class DoctrineWorkerTest extends TestCase
 {
     /**
-     * @var ServiceManager
-     */
-    protected $serviceManager;
-
-    /**
-     * @var DoctrineQueueInterface
+     * @var DoctrineQueueInterface&MockObject
      */
     protected $queue;
 
@@ -31,13 +26,12 @@ class DoctrineWorkerTest extends TestCase
     {
         $this->worker  = new DoctrineWorker(new EventManager());
         $this->queue   = $this->createMock(DoctrineQueueInterface::class);
-        $this->job     = new Asset\SimpleJob();
 
         // set max runs so our tests won't run forever
-        $this->maxRuns = new MaxRunsStrategy();
-        $this->maxRuns->setMaxRuns(1);
+        $maxRuns = new MaxRunsStrategy();
+        $maxRuns->setMaxRuns(1);
 
-        $this->maxRuns->attach($this->worker->getEventManager());
+        $maxRuns->attach($this->worker->getEventManager());
     }
 
     public function testAssertJobIsDeletedIfNoExceptionIsThrown(): void
@@ -46,9 +40,9 @@ class DoctrineWorkerTest extends TestCase
 
         $this->queue->expects($this->once())
             ->method('delete')
-            ->will($this->returnCallback(function () use ($job) {
-                    $job->setContent('deleted');
-            }));
+            ->willReturnCallback(function () use ($job) {
+                $job->setContent('deleted');
+            });
 
         $this->worker->processJob($job, $this->queue);
 
@@ -61,9 +55,9 @@ class DoctrineWorkerTest extends TestCase
 
         $this->queue->expects($this->once())
             ->method('release')
-            ->will($this->returnCallback(function () use ($job) {
-                    $job->setContent('released');
-            }));
+            ->willReturnCallback(function () use ($job) {
+                $job->setContent('released');
+            });
 
         $this->worker->processJob($job, $this->queue);
 
@@ -76,9 +70,9 @@ class DoctrineWorkerTest extends TestCase
 
         $this->queue->expects($this->once())
             ->method('bury')
-            ->will($this->returnCallback(function () use ($job) {
-                    $job->setContent('buried');
-            }));
+            ->willReturnCallback(function () use ($job) {
+                $job->setContent('buried');
+            });
 
         $this->worker->processJob($job, $this->queue);
 
@@ -91,9 +85,9 @@ class DoctrineWorkerTest extends TestCase
 
         $this->queue->expects($this->once())
             ->method('bury')
-            ->will($this->returnCallback(function () use ($job) {
-                    $job->setContent('buried');
-            }));
+            ->willReturnCallback(function () use ($job) {
+                $job->setContent('buried');
+            });
 
         $this->worker->processJob($job, $this->queue);
 
@@ -106,9 +100,9 @@ class DoctrineWorkerTest extends TestCase
 
         $this->queue->expects($this->once())
             ->method('bury')
-            ->will($this->returnCallback(function () use ($job) {
+            ->willReturnCallback(function () use ($job) {
                 $job->setContent('buried');
-            }));
+            });
 
         $this->worker->processJob($job, $this->queue);
 

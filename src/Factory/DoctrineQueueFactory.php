@@ -16,7 +16,7 @@ class DoctrineQueueFactory implements FactoryInterface
     /**
      * {@inheritDoc}
      */
-    public function __invoke(ContainerInterface $container, $requestedName, array $options = null): DoctrineQueue
+    public function __invoke(ContainerInterface $container, $requestedName, ?array $options = null): DoctrineQueue
     {
         $config        = $container->get('config');
         $queuesOptions = $config['slm_queue']['queues'];

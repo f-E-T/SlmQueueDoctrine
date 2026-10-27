@@ -11,21 +11,36 @@ on:
 jobs:
     unit-test:
         name: "Unit tests"
-        runs-on: "ubuntu-20.04"
+        runs-on: "ubuntu-latest"
         strategy:
             matrix:
                 php-version:
-                    - "7.4"
-                    - "8.0"
-                    - "8.1"
                     - "8.2"
                     - "8.3"
+                    - "8.4"
+                    - "8.5"
                 dependencies:
                     - "highest"
                     - "lowest"
+                composer-options:
+                    - ""
+                include:
+                    # "lowest" resolves to DBAL 3 and Persistence 3, so also test the lowest DBAL 4 and Persistence 4
+                    - php-version: "8.2"
+                      dependencies: "lowest"
+                      composer-options: "--with doctrine/dbal:^4.3.4 --with doctrine/persistence:^4.0"
+                    - php-version: "8.3"
+                      dependencies: "lowest"
+                      composer-options: "--with doctrine/dbal:^4.3.4 --with doctrine/persistence:^4.0"
+                    - php-version: "8.4"
+                      dependencies: "lowest"
+                      composer-options: "--with doctrine/dbal:^4.3.4 --with doctrine/persistence:^4.0"
+                    - php-version: "8.5"
+                      dependencies: "lowest"
+                      composer-options: "--with doctrine/dbal:^4.3.4 --with doctrine/persistence:^4.0"
         steps:
             - name: "Checkout"
-              uses: "actions/checkout@v2"
+              uses: "actions/checkout@v7"
 
             - name: "Install PHP"
               uses: "shivammathur/setup-php@v2"
@@ -35,13 +50,22 @@ jobs:
                   COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: "Install dependencies with Composer"
-              uses: "ramsey/composer-install@v1"
+              uses: "ramsey/composer-install@v4"
               with:
                   dependency-versions: "${{ matrix.dependencies }}"
+                  composer-options: "${{ matrix.composer-options }}"
               env:
                   COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: "Run tests"
+            - name: "Run PHPUnit"
               run: "composer test"
+              env:
+                  COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            # Laminas MVC does not support PHP 8.5. The integration project always installs the highest
+            # dependencies, so it only runs once per PHP version.
+            - name: "Run Laminas MVC integration tests"
+              if: matrix.php-version != '8.5' && matrix.dependencies == 'highest'
+              run: "composer test-mvc"
               env:
                   COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}

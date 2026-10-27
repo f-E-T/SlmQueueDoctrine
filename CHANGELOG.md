@@ -1,3 +1,16 @@
+# 5.0.0
+
+- [BC] Published as `fet/queue-doctrine` and requires `fet/queue` 4.0 instead of `slm/queue`
+- [BC] Dropped support for PHP 7.4, 8.0 and 8.1; added support for PHP 8.4 and 8.5
+- Laminas MVC is still supported on PHP 8.2 to 8.4; `SlmQueueDoctrine\Module` is deprecated
+- [BC] `config/module.config.php` registers services under `dependencies` (`Module::getConfig()` still uses
+  `service_manager`)
+- [BC] Requires Doctrine DBAL `^3.10.4 || ^4.3.4` (adds DBAL 4 support)
+- [BC] `ClearObjectManagerStrategy` no longer supports DoctrineModule's `ObjectManagerAwareInterface`
+- Fixed a `TypeError` in `slm-queue:doctrine:recover` for queues that are not Doctrine queues
+
+See [UPGRADE.md](UPGRADE.md) for details.
+
 # 2.0.3 And later
 
 Changelog for these releases can be found on the releases page, see https://github.com/juriansluiman/SlmQueueDoctrine/releases.

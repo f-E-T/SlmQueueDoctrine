@@ -1,6 +1,6 @@
 {
-    "name": "slm/queue-doctrine",
-    "description": "Laminas Framework module that integrates Doctrine as queuing system",
+    "name": "fet/queue-doctrine",
+    "description": "Laminas module that integrates Doctrine DBAL as queuing system for fet/queue",
     "license": "BSD-3-Clause",
     "type": "library",
     "keywords": [
@@ -12,7 +12,7 @@
         "db",
         "database"
     ],
-    "homepage": "https://github.com/Webador/SlmQueueDoctrine",
+    "homepage": "https://github.com/f-E-T/SlmQueueDoctrine",
     "authors": [
         {
             "name": "Stefan Kleff",
@@ -23,47 +23,39 @@
             "name": "Bas Kamer",
             "email": "baskamer@gmail.com",
             "homepage": "https://bushbaby.nl"
+        },
+        {
+            "name": "Marc Schulthess",
+            "email": "fet.ca26f02b@gmail.com"
         }
     ],
     "require": {
-        "php": "~7.4.0 || ~8.0.0 || ~8.1.0 || ~8.2.0 || ~8.3.0",
-        "laminas/laminas-eventmanager": "^3.4",
-        "laminas/laminas-router": "^3.5",
-        "slm/queue": "^3.1",
-        "doctrine/dbal": "^3.1.2",
-        "doctrine/annotations": "^1.8",
-        "laminas/laminas-config": "^3.7"
+        "php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
+        "doctrine/dbal": "^3.10.4 || ^4.3.4",
+        "doctrine/persistence": "^3.4.1 || ^4.0",
+        "fet/queue": "^4.0",
+        "laminas/laminas-eventmanager": "^3.15",
+        "laminas/laminas-servicemanager": "^3.24",
+        "laminas/laminas-stdlib": "^3.21",
+        "psr/container": "^1.1",
+        "symfony/console": "^6.4.8 || ^7.4 || ^8.1"
     },
     "require-dev": {
-        "ext-sqlite3": "*",
-        "doctrine/doctrine-orm-module": "^4.1 || ^5.0 || ^6.0",
-        "laminas/laminas-modulemanager": "^2.11",
-        "laminas/laminas-view": "^2.13",
-        "laminas/laminas-log": "^2.15",
-        "laminas/laminas-i18n": "^2.12",
-        "laminas/laminas-serializer": "^2.11",
-        "laminas/laminas-mvc": "^3.3",
-        "doctrine/orm": "^2.11.1",
-        "phpunit/phpunit": "^9.3",
-        "squizlabs/php_codesniffer": "^3.6.2"
+        "ext-pdo_sqlite": "*",
+        "doctrine/deprecations": "^1.1.5",
+        "phpunit/phpunit": "^11.5 || ^12.0 || ^13.0",
+        "squizlabs/php_codesniffer": "^3.13 || ^4.0"
     },
     "conflict": {
-        "doctrine/cache": ">=2.0"
-    },
-    "suggest": {
-        "doctrine/doctrine-orm-module": "If you use Doctrine in combination with Laminas",
-        "roave/psr-container-doctrine": "Configures Doctrine services automatically."
+        "slm/queue-doctrine": "*"
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "3.1.x-dev"
+            "dev-master": "5.0.x-dev"
         },
         "laminas": {
             "module": "SlmQueueDoctrine\\Module",
-            "config-provider": "SlmQueueDoctrine\\ConfigProvider",
-            "component-whitelist": [
-                "slm/queue"
-            ]
+            "config-provider": "SlmQueueDoctrine\\ConfigProvider"
         }
     },
     "autoload": {
@@ -81,16 +73,8 @@
         "cs-fix": "phpcbf",
         "test": [
             "phpunit",
-            "@composer test --working-dir=tests/laminas-runner",
-            "@composer test --working-dir=tests/mezzio-runner"
-        ]
-    },
-    "config": {
-        "platform": {
-            "php": "7.4.0"
-        },
-        "allow-plugins": {
-            "composer/package-versions-deprecated": true
-        }
+            "@composer test --working-dir=tests/integration/mezzio"
+        ],
+        "test-mvc": "@composer test --working-dir=tests/integration/laminas"
     }
 }

@@ -2,7 +2,7 @@
 
 namespace SlmQueueDoctrineTest;
 
-use PHPUnit\Framework\TestCase as TestCase;
+use PHPUnit\Framework\TestCase;
 use SlmQueueDoctrine\ConfigProvider;
 use SlmQueueDoctrine\Module;
 
@@ -13,17 +13,19 @@ class ConfigProviderTest extends TestCase
         $configProvider = new ConfigProvider();
         $config = $configProvider();
 
-        static::assertNotEmpty($config);
+        static::assertNotEmpty($config['dependencies']);
+        static::assertNotEmpty($config['slm_queue']);
+        static::assertNotEmpty($config['laminas-cli']);
     }
 
-    public function testConfigEqualsToModuleConfig(): void
+    public function testModuleConfigEqualsConfigProviderWithServiceManagerKey(): void
     {
-        $module = new Module();
-        $moduleConfig = $module->getConfig();
-        $configProvider = new ConfigProvider();
-        $config = $configProvider();
+        $config = (new ConfigProvider())();
+        $moduleConfig = (new Module())->getConfig();
 
-        static::assertEquals($moduleConfig['service_manager'], $config['dependencies']);
-        static::assertEquals($moduleConfig['slm_queue'], $config['slm_queue']);
+        static::assertSame($config['dependencies'], $moduleConfig['service_manager']);
+        static::assertArrayNotHasKey('dependencies', $moduleConfig);
+        static::assertSame($config['slm_queue'], $moduleConfig['slm_queue']);
+        static::assertSame($config['laminas-cli'], $moduleConfig['laminas-cli']);
     }
 }

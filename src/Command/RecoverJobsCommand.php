@@ -46,11 +46,13 @@ class RecoverJobsCommand extends Command
         $queue         = $this->queuePluginManager->get($queueName);
 
         if (! $queue instanceof DoctrineQueueInterface) {
-            return sprintf("\nQueue % does not support the recovering of job\n\n", $queueName);
+            $output->writeln(sprintf("\nQueue %s does not support the recovering of jobs\n\n", $queueName));
+
+            return Command::FAILURE;
         }
 
         try {
-            $count = $queue->recover($executionTime);
+            $count = $queue->recover((int) $executionTime);
         } catch (ExceptionInterface $exception) {
             throw new WorkerProcessException("An error occurred", $exception->getCode(), $exception);
         }

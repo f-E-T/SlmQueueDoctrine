@@ -1,76 +1,99 @@
 SlmQueueDoctrine
 ================
 
-Important notice
-----------
+[![Latest Stable Version](https://poser.pugx.org/fet/queue-doctrine/v/stable.png)](https://packagist.org/packages/fet/queue-doctrine)
 
-**We decided to move onto Symfony Messenger and we are therefore not maintaining this repository anymore. Feel free to fork it and
-make it your own.**
+This is a maintained fork of [Webador/SlmQueueDoctrine](https://github.com/Webador/SlmQueueDoctrine)
+(`slm/queue-doctrine`), which is no longer maintained. It is published as `fet/queue-doctrine`, starting at version 5.0,
+and supports the [PHP versions that are currently supported](https://www.php.net/supported-versions.php). The
+`SlmQueueDoctrine\` namespace is unchanged, so `fet/queue-doctrine` cannot be installed next to `slm/queue-doctrine`.
+See [UPGRADE.md](UPGRADE.md) when coming from `slm/queue-doctrine` 4.x.
 
-[![Latest Stable Version](https://poser.pugx.org/slm/queue-doctrine/v/stable.png)](https://packagist.org/packages/slm/queue-doctrine)
-[![Latest Unstable Version](https://poser.pugx.org/slm/queue-doctrine/v/unstable.png)](https://packagist.org/packages/slm/queue-doctrine)
+SlmQueueDoctrine is the [Doctrine DBAL](https://www.doctrine-project.org/projects/dbal.html) adapter for
+[fet/queue](https://github.com/f-E-T/SlmQueue) (SlmQueue). It stores jobs in a database table and works in Laminas
+applications, such as Mezzio, that use [laminas-servicemanager](https://github.com/laminas/laminas-servicemanager).
+Laminas MVC is still supported on PHP 8.2 to 8.4, but deprecated (see [Laminas MVC](#laminas-mvc)).
 
-Created by Stefan Kleff
+Laminas MVC
+-----------
+
+The `SlmQueueDoctrine` module works as before; no code changes are needed. Laminas MVC does not support PHP 8.5, so in
+a Laminas MVC application SlmQueueDoctrine runs on PHP 8.2, 8.3 and 8.4 only.
+[Laminas MVC is retiring](https://getlaminas.org/blog/2026-03-06-laminas-mvc-eol-schedule.html): it is security-only
+until 31 December 2028. `SlmQueueDoctrine\Module` is therefore deprecated and will be removed in a future major
+version after Laminas MVC's end of life. The Laminas project recommends moving to Mezzio.
 
 Requirements
 ------------
-* [SlmQueue](https://github.com/JouwWeb/SlmQueue)
-* [Doctrine 2 ORM Module](https://github.com/doctrine/DoctrineORMModule) or [roave/psr-container-doctrine](https://github.com/roave/psr-container-doctrine)
-
-Note: it's necessary require the doctrine package in composer.json file.
+* PHP 8.2, 8.3, 8.4 or 8.5
+* [fet/queue](https://github.com/f-E-T/SlmQueue) 4.x
+* [Doctrine DBAL](https://www.doctrine-project.org/projects/dbal.html) 3.10 or 4.x
 
 Installation
 ------------
 
-Run `composer require slm/queue-doctrine`.
+Run `composer require fet/queue-doctrine`.
 
-If you have the [laminas/laminas-component-installer](https://github.com/laminas/laminas-component-installer) package installed, it will ask you to enable the module (and `SlmQueue`), both in Laminas and Mezzio. Otherwise, add the module to the list:
-* in Laminas MVC, enable the module by adding `SlmQueueDoctrine` in your application.config.php file.
-* in Mezzio, enable the module by adding `SlmQueueDoctrine\ConfigProvider::class,` in your config.php file.
+If you have the [laminas/laminas-component-installer](https://github.com/laminas/laminas-component-installer) package
+installed, it will ask you to enable the module (and `SlmQueue`), both in Laminas MVC and Mezzio. Otherwise:
 
-Note: Don't forget install [SlmQueue](https://github.com/JouwWeb/SlmQueue) in you config file, which is required.
+* in Mezzio, add `SlmQueue\ConfigProvider` and `SlmQueueDoctrine\ConfigProvider` to your `config/config.php`:
+
+```php
+$aggregator = new ConfigAggregator([
+    \SlmQueue\ConfigProvider::class,
+    \SlmQueueDoctrine\ConfigProvider::class,
+    // ...
+]);
+```
+
+* in Laminas MVC (PHP 8.2 to 8.4 only), add `SlmQueue` and `SlmQueueDoctrine` to the modules in your
+  `config/application.config.php` (or `config/modules.config.php`).
 
 Documentation
 -------------
 
-Before reading SlmQueueDoctrine documentation, please read [SlmQueue documentation](https://github.com/JouwWeb/SlmQueue).
+Before reading SlmQueueDoctrine documentation, please read the [SlmQueue documentation](https://github.com/f-E-T/SlmQueue).
 
 ### Configuring the connection
 
-You need to register a doctrine connection which SlmQueueDoctrine will use to access the database into the service manager. Here are some [examples](https://github.com/Roave/psr-container-doctrine/tree/master/example).
-
-Connection parameters can be defined in the application configuration:
+SlmQueueDoctrine needs a `Doctrine\DBAL\Connection` from the service container. By default it uses the service
+`doctrine.connection.orm_default`; see [Configuring queues](#configuring-queues) to use another one. If your application
+already registers a Doctrine connection (for example with
+[roave/psr-container-doctrine](https://github.com/Roave/psr-container-doctrine)), nothing else is needed. Otherwise,
+register a factory for it (in Laminas MVC, under `service_manager` instead of `dependencies`):
 
 ```php
 <?php
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
+
 return [
-    'doctrine' => [
-        'connection' => [
-            // default connection name
-            'orm_default' => [
-                'driverClass' => 'Doctrine\DBAL\Driver\PDOMySql\Driver',
-                'params' => [
-                    'host'     => 'localhost',
-                    'port'     => '3306',
-                    'user'     => 'username',
-                    'password' => 'password',
-                    'dbname'   => 'database',
-                ]
-            ]
-        ]
+    'dependencies' => [
+        'factories' => [
+            'doctrine.connection.orm_default' => static fn (): Connection => DriverManager::getConnection([
+                'driver'   => 'pdo_mysql',
+                'host'     => 'localhost',
+                'port'     => 3306,
+                'user'     => 'username',
+                'password' => 'password',
+                'dbname'   => 'database',
+            ]),
+        ],
     ],
 ];
 ```
 
 ### Creating the table from SQL file
 
-You must create the required table that will contain the queue's you may use the schema located in 'data/queue_default.sql'. If you change the table name look at [Configuring queues](./#configuring-queues)
+You must create the required table that will contain the queue's you may use the schema located in 'data/queue_default.sql'. If you change the table name look at [Configuring queues](#configuring-queues)
 
 ```
 >mysql database < data/queue_default.sql
 ```
 ### Creating the table from Doctrine Entity
-There is an alternative way to create 'queue_default' table in your database by copying Doctrine Entity 'date/DefaultQueue.php' to your entity folder ('Application\Entity' in our example) and executing Doctrine's 'orm:schema-tool:update' command which should create the table for you. Notice that DefaultQueue entity is only used for table creation and is not used by this module internally.
+There is an alternative way to create 'queue_default' table in your database by copying Doctrine Entity 'data/DefaultQueue.php' to your entity folder ('Application\Entity' in our example) and executing Doctrine's 'orm:schema-tool:update' command which should create the table for you. Notice that DefaultQueue entity is only used for table creation and is not used by this module internally.
 
 
 ### Adding queues
@@ -125,11 +148,12 @@ return [
 Provided Worker Strategies
 --------------------------
 
-In addition to the provided strategies by [SlmQueue](https://github.com/JouwWeb/SlmQueue/blob/master/docs/6.Events.md) SlmQueueDoctrine comes with these strategies;
+In addition to the provided strategies by [SlmQueue](https://github.com/f-E-T/SlmQueue/blob/master/docs/6.Events.md) SlmQueueDoctrine comes with these strategies;
 
 #### ClearObjectManagerStrategy
 
-This strategy will clear the ObjectManager before execution of individual jobs. The job must implement the [DoctrineModule\Persistence\ObjectManagerAwareInterface](https://github.com/doctrine/DoctrineModule/blob/master/src/DoctrineModule/Persistence/ObjectManagerAwareInterface.php) or [SlmQueueDoctrine\Persistence\ObjectManagerAwareInterface](https://github.com/JouwWeb/SlmQueueDoctrine/blob/master/src/Persistence/ObjectManagerAwareInterface.php).
+This strategy will clear the ObjectManager before execution of individual jobs. The job must implement
+[SlmQueueDoctrine\Persistence\ObjectManagerAwareInterface](src/Persistence/ObjectManagerAwareInterface.php).
 
 listens to:
 
@@ -210,14 +234,14 @@ $queue->push($job, [
 
 // scheduled for execution at now + 300 seconds
 $queue->push($job, [
-    'delay' => new DateInterval("PT300S"))
+    'delay' => new DateInterval("PT300S")
 ]);
 ```
 
 
 ### Worker actions
 
-Interact with workers from the command line from within the public folder of your Laminas Framework 2 application
+Interact with workers from the command line from within the root folder of your application
 
 #### Starting a worker
 Start a worker that will keep monitoring a specific queue for jobs scheduled to be processed. This worker will continue until it has reached certain criteria (exceeds a memory limit or has processed a specified number of jobs).

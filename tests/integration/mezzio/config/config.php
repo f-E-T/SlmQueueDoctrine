@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Laminas\ConfigAggregator\ArrayProvider;
 use Laminas\ConfigAggregator\ConfigAggregator;
 use Laminas\ConfigAggregator\PhpFileProvider;
 
@@ -10,10 +9,6 @@ $aggregator = new ConfigAggregator([
     \SlmQueue\ConfigProvider::class,
     \SlmQueueDoctrine\ConfigProvider::class,
 
-    \DoctrineModule\ConfigProvider::class,
-    \DoctrineORMModule\ConfigProvider::class,
-
-    \Laminas\Validator\ConfigProvider::class,
     \Mezzio\ConfigProvider::class,
     \Laminas\Diactoros\ConfigProvider::class,
 

@@ -22,8 +22,8 @@ class ClearObjectManagerStrategyTest extends TestCase
 
     public function setUp(): void
     {
-        $this->queue = $this->createMock(QueueInterface::class);
-        $this->worker = new DoctrineWorker($this->createMock(EventManagerInterface::class));
+        $this->queue = $this->createStub(QueueInterface::class);
+        $this->worker = new DoctrineWorker($this->createStub(EventManagerInterface::class));
         $this->listener = new ClearObjectManagerStrategy();
     }
 

@@ -7,97 +7,79 @@ use DateTime;
 
 /**
  * DefaultQueue
- *
- * @ORM\Table(
- *     name="queue_default",
- *     options={"collate"="utf8_bin"},
- *     indexes={
- *          @ORM\Index(name="pop", columns={"status", "queue", "scheduled", "priority"}),
- *          @ORM\Index(name="prune", columns={"status", "queue", "finished"})
- *     }
- * )
- * @ORM\Entity()
  */
+#[ORM\Entity]
+#[ORM\Table(name: 'queue_default', options: ['collation' => 'utf8_bin'])]
+#[ORM\Index(name: 'pop', columns: ['status', 'queue', 'scheduled', 'priority'])]
+#[ORM\Index(name: 'prune', columns: ['status', 'queue', 'finished'])]
 class DefaultQueue
 {
     /**
      * @var integer
-     *
-     * @ORM\Column(name="id", type="integer", nullable=false)
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="IDENTITY")
      */
+    #[ORM\Column(name: 'id', type: 'integer', nullable: false)]
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
     private $id;
 
     /**
      * @var string
-     *
-     * @ORM\Column(name="queue", type="string", length=64, nullable=false)
      */
+    #[ORM\Column(name: 'queue', type: 'string', length: 64, nullable: false)]
     private $queue;
 
     /**
      * @var string
-     *
-     * @ORM\Column(name="data", type="text", nullable=false, length=16777215)
      */
+    #[ORM\Column(name: 'data', type: 'text', length: 16777215, nullable: false)]
     private $data;
 
     /**
      * @var int
-     *
-     * @ORM\Column(name="status", type="smallint", length=1, nullable=false)
      */
+    #[ORM\Column(name: 'status', type: 'smallint', nullable: false)]
     private $status;
 
     /**
      * @var \DateTime
-     *
-     * @ORM\Column(name="created", type="datetime", nullable=false)
      */
+    #[ORM\Column(name: 'created', type: 'datetime', nullable: false)]
     private $created;
 
     /**
      * @var \DateTime
-     *
-     * @ORM\Column(name="scheduled", type="datetime", nullable=false)
      */
+    #[ORM\Column(name: 'scheduled', type: 'datetime', nullable: false)]
     private $scheduled;
 
     /**
      * @var \DateTime
-     *
-     * @ORM\Column(name="executed", type="datetime", nullable=true)
      */
+    #[ORM\Column(name: 'executed', type: 'datetime', nullable: true)]
     private $executed;
 
     /**
      * @var \DateTime
-     *
-     * @ORM\Column(name="finished", type="datetime", nullable=true)
      */
+    #[ORM\Column(name: 'finished', type: 'datetime', nullable: true)]
     private $finished;
 
     /**
      * @var int
-     *
-     * @ORM\Column(name="priority", type="integer", nullable=false, options={"default" : 1024})
      */
+    #[ORM\Column(name: 'priority', type: 'integer', nullable: false, options: ['default' => 1024])]
     private $priority;
 
     /**
      * @var string
-     *
-     * @ORM\Column(name="message", type="text", nullable=true)
      */
+    #[ORM\Column(name: 'message', type: 'text', nullable: true)]
     private $message;
 
     /**
      * @var string
-     *
-     *
-     * @ORM\Column(name="trace", type="text", nullable=true)
      */
+    #[ORM\Column(name: 'trace', type: 'text', nullable: true)]
     private $trace;
 
 
@@ -237,10 +219,10 @@ class DefaultQueue
     /**
      * Set executed
      *
-     * @param \DateTime $executed
+     * @param \DateTime|null $executed
      * @return DefaultQueue
      */
-    public function setExecuted(DateTime $executed = null)
+    public function setExecuted(?DateTime $executed = null)
     {
         $this->executed = $executed ? clone $executed : null;
 
@@ -264,10 +246,10 @@ class DefaultQueue
     /**
      * Set finished
      *
-     * @param \DateTime $finished
+     * @param \DateTime|null $finished
      * @return DefaultQueue
      */
-    public function setFinished(DateTime $finished = null)
+    public function setFinished(?DateTime $finished = null)
     {
         $this->finished = $finished ? clone $finished : null;
 

@@ -1,13 +1,15 @@
 <?php
 
+use Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory;
+use Laminas\ServiceManager\Factory\InvokableFactory;
 use SlmQueueDoctrine\Command\RecoverJobsCommand;
 use SlmQueueDoctrine\Strategy\ClearObjectManagerStrategy;
 use SlmQueueDoctrine\Strategy\IdleNapStrategy;
 
 return [
-    'service_manager' => [
+    'dependencies' => [
         'factories' => [
-            RecoverJobsCommand::class => \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
+            RecoverJobsCommand::class => ReflectionBasedAbstractFactory::class,
         ]
     ],
     'laminas-cli' => [
@@ -32,8 +34,8 @@ return [
          */
         'strategy_manager'  => [
             'factories' => [
-                IdleNapStrategy::class            => \Laminas\ServiceManager\Factory\InvokableFactory::class,
-                ClearObjectManagerStrategy::class => \Laminas\ServiceManager\Factory\InvokableFactory::class,
+                IdleNapStrategy::class            => InvokableFactory::class,
+                ClearObjectManagerStrategy::class => InvokableFactory::class,
             ],
         ],
     ],

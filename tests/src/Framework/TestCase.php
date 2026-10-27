@@ -20,7 +20,7 @@
 
 namespace SlmQueueDoctrineTest\Framework;
 
-use Doctrine\ORM\EntityManager;
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use SlmQueueDoctrineTest\Util\ServiceManagerFactory;
 
@@ -31,10 +31,7 @@ class TestCase extends PHPUnitTestCase
      */
     protected $hasDb = false;
 
-    /**
-     * @var EntityManager
-     */
-    private $entityManager;
+    private ?Connection $connection = null;
 
     public function createDb(): void
     {
@@ -42,33 +39,27 @@ class TestCase extends PHPUnitTestCase
             return;
         }
 
-        $em = $this->getEntityManager();
-        $conn = $em->getConnection();
-
-        $conn->executeQuery(file_get_contents(__DIR__ . '/../../queue_default.sqlite'));
+        $this->getConnection()->executeStatement(file_get_contents(__DIR__ . '/../../queue_default.sqlite'));
 
         $this->hasDb = true;
     }
 
     public function dropDb(): void
     {
-        $em = $this->getEntityManager();
-        $conn = $em->getConnection();
-
-        $conn->executeQuery('DROP TABLE queue_default');
+        $this->getConnection()->executeStatement('DROP TABLE queue_default');
 
         $this->hasDb = false;
     }
 
-    public function getEntityManager(): EntityManager
+    public function getConnection(): Connection
     {
-        if ($this->entityManager) {
-            return $this->entityManager;
+        if ($this->connection) {
+            return $this->connection;
         }
 
         $serviceManager = ServiceManagerFactory::getServiceManager();
-        $this->entityManager = $serviceManager->get('doctrine.entitymanager.orm_default');
+        $this->connection = $serviceManager->get('doctrine.connection.orm_default');
 
-        return $this->entityManager;
+        return $this->connection;
     }
 }

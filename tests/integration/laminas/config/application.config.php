@@ -3,8 +3,6 @@
 return [
     'modules' => [
         'Laminas\Router',
-        'DoctrineModule',
-        'DoctrineORMModule',
         'SlmQueue',
         'SlmQueueDoctrine',
         'TestModule',

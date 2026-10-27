@@ -2,7 +2,6 @@
 
 namespace SlmQueueDoctrine\Strategy;
 
-use DoctrineModule\Persistence\ObjectManagerAwareInterface as DMObjectManagerAwareInterface;
 use Laminas\EventManager\EventManagerInterface;
 use SlmQueue\Strategy\AbstractStrategy;
 use SlmQueue\Worker\Event\ProcessJobEvent;
@@ -25,18 +24,12 @@ class ClearObjectManagerStrategy extends AbstractStrategy
 
     public function onClear(ProcessJobEvent $event): void
     {
-        /** @var ObjectManagerAwareInterface $job */
         $job = $event->getJob();
 
-
-        if (! ($job instanceof ObjectManagerAwareInterface || $job instanceof DMObjectManagerAwareInterface)) {
+        if (! $job instanceof ObjectManagerAwareInterface) {
             return;
         }
 
-        if (!$manager = $job->getObjectManager()) {
-            return;
-        }
-
-        $manager->clear();
+        $job->getObjectManager()->clear();
     }
 }

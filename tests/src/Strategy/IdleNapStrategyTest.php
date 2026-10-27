@@ -21,8 +21,8 @@ class IdleNapStrategyTest extends TestCase
 
     public function setUp(): void
     {
-        $this->queue = $this->createMock(QueueInterface::class);
-        $this->worker = new DoctrineWorker($this->createMock(EventManagerInterface::class));
+        $this->queue = $this->createStub(QueueInterface::class);
+        $this->worker = new DoctrineWorker($this->createStub(EventManagerInterface::class));
         $this->listener = new IdleNapStrategy();
     }
 
@@ -59,7 +59,7 @@ class IdleNapStrategyTest extends TestCase
 
     public function testOnIdleHandler(): void
     {
-        $this->queue = $this->createMock(DoctrineQueueInterface::class);
+        $this->queue = $this->createStub(DoctrineQueueInterface::class);
 
         $start_time = microtime(true);
         $this->listener->onIdle(new ProcessIdleEvent($this->worker, $this->queue));
@@ -67,7 +67,7 @@ class IdleNapStrategyTest extends TestCase
         static::assertGreaterThan(1, $elapsed_time);
 
 
-        $this->queue = $this->createMock(QueueInterface::class);
+        $this->queue = $this->createStub(QueueInterface::class);
 
         $start_time = microtime(true);
         $this->listener->onIdle(new ProcessIdleEvent($this->worker, $this->queue));

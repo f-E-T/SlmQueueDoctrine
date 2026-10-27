@@ -1,7 +1,5 @@
 <?php
 
-use Doctrine\DBAL\Driver\PDOSqlite\Driver;
-
 return [
     'slm_queue' => [
         'queues' => [
@@ -21,19 +19,7 @@ return [
     ],
     'dependencies' => [
         'factories' => [
-            'doctrine.entity_manager.orm_default' => \Roave\PsrContainerDoctrine\EntityManagerFactory::class,
-            'doctrine.connection.orm_default' => \Roave\PsrContainerDoctrine\ConnectionFactory::class,
-        ]
-    ],
-    'doctrine'  => [
-        'connection' => [
-            'orm_default' => [
-                'driverClass' => Driver::class,
-                'params'      => [
-                    'url' => 'sqlite:///temp/database.sqlite',
-                ],
-            ],
+            'doctrine.connection.orm_default' => \App\ConnectionFactory::class,
         ],
     ],
-
 ];

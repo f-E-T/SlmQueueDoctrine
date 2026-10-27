@@ -19,6 +19,7 @@
 
 namespace SlmQueueDoctrineTest\Asset;
 
+use Error;
 use SlmQueue\Job\AbstractJob;
 
 class ThrowableJob extends AbstractJob
@@ -28,6 +29,6 @@ class ThrowableJob extends AbstractJob
      */
     public function execute()
     {
-        $undefined->acces();
+        throw new Error('An error that is not an exception');
     }
 }
